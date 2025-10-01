@@ -44,35 +44,26 @@
         .badge-tension { background-color: #BE123C; color: #FFE4E6; }
         .badge-out-of-key { background-color: #B45309; color: #FEF3C7; }
         
-        .target-badge { 
-            background-color: #064E3B; 
-            color: #D1FAE5;
-            padding: 0.4rem 0.6rem;
-            border-radius: 0.5rem;
-            text-align: center;
+        .target-choice-label {
+            display: block;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            background-color: rgba(71, 85, 105, 0.2);
+            border: 1px solid #4B5563;
+            transition: all 0.2s;
         }
-        .target-badge-tritone {
-             background-color: #881337;
-             color: #fecdd3;
+        .target-choice-label:hover {
+            background-color: rgba(71, 85, 105, 0.5);
+            border-color: #6B7280;
         }
-
-        .target-badge-expressive {
-            background: linear-gradient(to right, #5b21b6, #4c1d95);
-            color: #ede9fe;
-            padding: 0.4rem 0.6rem;
-            border-radius: 0.5rem;
-            text-align: center;
+        .target-choice-input:checked + .target-choice-label {
+            background-color: #4c1d95;
+            border-color: #a78bfa;
+            color: white;
         }
-
-        .expressive-select {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 0.5rem center;
-            background-size: 1.5em 1.5em;
-            padding-right: 2.5rem;
+        .target-choice-input {
+            display: none;
         }
         
         .input-grid-cell {
@@ -80,9 +71,9 @@
             border: 1px solid #4B5563;
             border-radius: 0.5rem;
             width: 100%;
-            padding: 0.5rem;
+            padding: 0.25rem;
             text-align: center;
-            font-size: 1rem;
+            font-size: 0.875rem;
             font-weight: bold;
             color: white;
             transition: all 0.2s;
@@ -112,55 +103,79 @@
             color: #60A5FA; /* blue-400 */
             font-weight: 800;
         }
-       
+        
         #info-modal-overlay { transition: opacity 0.3s ease-in-out; }
         #info-modal-content { transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out; }
+        
+        /* Styles pour le manche de guitare */
+        #guitar-neck-wrapper {
+            overflow-x: auto;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: center;
+        }
+        .note-dot {
+            transition: all 0.2s;
+            stroke-width: 2;
+        }
+        @keyframes pulse-note {
+            0% { r: 9; opacity: 1; }
+            50% { r: 11; opacity: 0.8; }
+            100% { r: 9; opacity: 1; }
+        }
+        .note-dot-active {
+            animation: pulse-note 1s infinite;
+        }
 
     </style>
 </head>
-<body class="p-4">
+<body class="p-2 sm:p-4">
 
     <div class="min-h-screen flex flex-col items-center">
         
         <div class="w-full max-w-7xl mx-auto">
 
             <!-- Header -->
-            <header class="text-center mb-4">
+            <header class="text-center mb-2">
                 <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-1">🎸 GIA Navigator</h1>
                 <p class="text-md text-gray-400">Votre plan d'action visuel pour l'improvisation.</p>
             </header>
 
             <!-- Input & Player Section -->
-            <div class="mb-4 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-                <div class="flex justify-between items-center mb-3">
+            <div class="mb-2 p-3 bg-gray-800/50 rounded-xl border border-gray-700">
+                <div class="flex justify-between items-center mb-2">
                     <h2 class="text-lg font-bold text-white">1. Entrez votre grille (1 case = 2 temps)</h2>
                     <div class="flex gap-2">
                         <button id="random-grid-btn" title="Générer une grille aléatoire" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-1 px-3 rounded-lg transition">🎲 Aléatoire</button>
                         <button id="clear-grid-btn" title="Vider la grille" class="text-xs bg-red-800/50 hover:bg-red-700 text-white font-semibold py-1 px-3 rounded-lg transition">🗑️ Vider</button>
                     </div>
                 </div>
-                <div id="input-grid" class="grid grid-cols-8 gap-2 mb-4">
+                <div id="input-grid" class="grid grid-cols-8 gap-1 mb-3">
                     <!-- 24 input cells will be generated by JS -->
                 </div>
+                 <!-- Guitar Neck Section -->
+                <div id="guitar-neck-wrapper">
+                    <svg id="guitar-neck-svg" width="850" height="150"></svg>
+                </div>
                 <!-- Player Controls -->
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 p-3 bg-gray-900/50 rounded-lg">
+                <div class="mt-3 flex flex-col sm:flex-row items-center justify-center gap-4 p-2 bg-gray-900/50 rounded-lg">
                     <button id="play-stop-btn" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300 flex items-center justify-center gap-2">
                         <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         <svg id="stop-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         <span id="play-btn-text" class="w-16 text-left">Play</span>
                     </button>
-                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
                         <label for="tempo-slider" class="font-semibold text-gray-300">Tempo:</label>
-                        <input type="range" id="tempo-slider" min="60" max="180" value="120" class="w-full">
-                        <span id="tempo-value" class="font-bold text-white w-12 text-center">120 bpm</span>
+                        <input type="range" id="tempo-slider" min="45" max="180" value="45" class="w-full">
+                        <span id="tempo-value" class="font-bold text-white w-12 text-center">45 bpm</span>
                     </div>
                 </div>
             </div>
 
 
             <!-- Analysis Section -->
-            <div class="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-                <div class="flex flex-col sm:flex-row justify-between sm:items-start mb-3 gap-3">
+            <div class="p-3 bg-gray-800/50 rounded-xl border border-gray-700">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-start mb-2 gap-3">
                     <div>
                         <h2 class="text-lg font-bold text-white">2. Votre Plan d'Action GIA</h2>
                         <div class="flex items-center flex-wrap gap-x-4 gap-y-2 mt-2">
@@ -170,8 +185,8 @@
                     </div>
                     <div class="flex flex-col items-end gap-2 self-stretch">
                          <button id="export-btn" class="hidden w-full bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
-                            Exporter (CSV)
-                        </button>
+                             Exporter (CSV)
+                         </button>
                     </div>
                 </div>
                 <div id="analysis-output" class="flex flex-wrap -m-1">
@@ -180,7 +195,7 @@
             </div>
 
             <!-- Footer -->
-            <footer class="text-center mt-6 text-gray-500 text-sm">
+            <footer class="text-center mt-4 text-gray-500 text-sm">
                 <p>Développé pour la Guitare Impro Académie par François.</p>
             </footer>
         </div>
@@ -220,6 +235,7 @@
         const tempoValue = document.getElementById('tempo-value');
         const clearGridBtn = document.getElementById('clear-grid-btn');
         const randomGridBtn = document.getElementById('random-grid-btn');
+        const neckSVG = document.getElementById('guitar-neck-svg');
 
         // --- Music Theory Data ---
         const NOTES = {
@@ -227,20 +243,27 @@
             flat:  ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
         };
         const MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
+        const MINOR_PENTATONIC_INTERVALS = [0, 3, 5, 7, 10];
+        const MAJOR_PENTATONIC_INTERVALS = [0, 2, 4, 7, 9];
         
         let analysisResultsForExport = [];
         let bassSynth, part, metronome, countdownPart;
         let currentLoopEndMeasures = 0;
         const TOTAL_CELLS = 24;
+        
+        const TUNING = ['E', 'A', 'D', 'G', 'B', 'E'];
+        let notePositions = {};
 
         // --- Initialization & Event Listeners ---
         function initializeApp() {
+            calculateNotePositions();
+            drawNeck();
             initializeGrid();
             initializePlayer();
             exportBtn.addEventListener('click', exportToCSV);
             clearGridBtn.addEventListener('click', clearGrid);
             randomGridBtn.addEventListener('click', generateRandomProgression);
-            analysisOutput.addEventListener('change', handlePaletteSelection);
+            analysisOutput.addEventListener('change', handleNoteSelection);
             analysisOutput.addEventListener('click', handleBadgeClick);
             modalOverlay.addEventListener('click', hideModal);
             modalCloseBtn.addEventListener('click', hideModal);
@@ -295,10 +318,21 @@
                 tempoValue.textContent = `${bpm} bpm`;
             });
             Tone.Transport.bpm.value = tempoSlider.value;
+            tempoValue.textContent = `${tempoSlider.value} bpm`;
         }
 
         function startWithCountdown() {
-            if (currentLoopEndMeasures === 0) return; 
+            if (currentLoopEndMeasures === 0) return;
+
+            const firstChordAnalysis = analysisResultsForExport[0];
+            if (firstChordAnalysis) {
+                const activeNotes = (firstChordAnalysis.selectedNote) ? [firstChordAnalysis.selectedNote] : [];
+                
+                let nextChordAnalysis = analysisResultsForExport[1] || firstChordAnalysis;
+                const previewNotes = (nextChordAnalysis && nextChordAnalysis.selectedNote) ? [nextChordAnalysis.selectedNote] : [];
+
+                updateNeckDisplay({ active: activeNotes, preview: previewNotes });
+            }
 
             playBtnText.textContent = '...';
             playStopBtn.disabled = true;
@@ -334,14 +368,14 @@
 
         function stopPlayback() {
              if (countdownPart) {
-                countdownPart.stop(0);
-                countdownPart.dispose();
-                countdownPart = null;
+                 countdownPart.stop(0);
+                 countdownPart.dispose();
+                 countdownPart = null;
              }
              if (part) {
-                part.stop(0);
-                part.dispose();
-                part = null;
+                 part.stop(0);
+                 part.dispose();
+                 part = null;
              }
              
              bassSynth.triggerRelease();
@@ -359,6 +393,7 @@
              stopIcon.classList.add('hidden');
              playStopBtn.disabled = false;
              document.querySelectorAll('.input-grid-cell.cell-active').forEach(c => c.classList.remove('cell-active'));
+             updateNeckDisplay({ active: [], preview: [] });
         }
         
         // --- Core Functions ---
@@ -373,6 +408,7 @@
                 tonalityDisplay.textContent = 'En attente d\'un accord...';
                 scaleNotesDisplay.innerHTML = '';
                 exportBtn.classList.add('hidden');
+                drawNeck(); // Redraw empty neck
                 return;
             }
 
@@ -381,17 +417,25 @@
             tonalityDisplay.textContent = `Tonalité: ${key.name}`;
             displayScaleNotes(key);
             
-            const activeChords = chords.filter(c => c.trim() !== '');
-            
-            activeChords.forEach((chordName, index) => {
-                const nextChordName = activeChords[index + 1] || activeChords[0]; // Loop around for V->I check
-                const analysis = analyzeSingleChord(chordName, key, nextChordName);
-                analysis.index = index;
-                analysisResultsForExport.push(analysis);
-                analysisOutput.appendChild(createAnalysisCard(analysis));
-            });
+            const pentatonicNotes = getPentatonicScaleNotes(key);
+            drawNeck(pentatonicNotes);
 
-            if (activeChords.length > 0) {
+            const activeChordsWithIndices = [];
+            chords.forEach((chord, index) => {
+                if (chord.trim() !== '') {
+                    activeChordsWithIndices.push({ chord, index });
+                }
+            });
+            
+            if (activeChordsWithIndices.length > 0) {
+                activeChordsWithIndices.forEach((chordItem, activeIndex) => {
+                    const nextChordItem = activeChordsWithIndices[activeIndex + 1] || activeChordsWithIndices[0];
+                    const analysis = analyzeSingleChord(chordItem.chord, key, nextChordItem.chord);
+                    analysis.gridIndex = chordItem.index;
+                    analysis.analysisIndex = activeIndex;
+                    analysisResultsForExport.push(analysis);
+                    analysisOutput.appendChild(createAnalysisCard(analysis));
+                });
                 exportBtn.classList.remove('hidden');
             } else {
                 exportBtn.classList.add('hidden');
@@ -443,10 +487,11 @@
                 }
             }
             
-            for (let i=0; i <= lastChordIndex; i++) {
+            const loopEndCells = currentLoopEndMeasures * 2;
+            for (let i = 0; i < loopEndCells; i++) {
                 const beat = i * 2;
                 const time = `${Math.floor(beat / 4)}:${beat % 4}:0`;
-                events.push({ time, index: i, type: 'highlight' });
+                events.push({ time, gridIndex: i, type: 'highlight' });
             }
 
             for (let beat = 0; beat < totalLoopBeats; beat++) {
@@ -466,9 +511,10 @@
                     } else if (value.type === 'highlight') {
                         Tone.Draw.schedule(() => {
                             document.querySelectorAll('.input-grid-cell.cell-active').forEach(c => c.classList.remove('cell-active'));
-                            if(inputCells[value.index]) {
-                                inputCells[value.index].classList.add('cell-active');
+                            if(inputCells[value.gridIndex]) {
+                                inputCells[value.gridIndex].classList.add('cell-active');
                             }
+                            updateNeckForPlayback(value.gridIndex);
                         }, time);
                     }
                 }, events).start("1m");
@@ -486,7 +532,7 @@
             const degree = findDegree(chordName, key);
             
             const isOutOfKey = checkIfOutOfKey(chordName, key, degree);
-            const isPotentiallyDominant = (degree.replace(/[#b]/g, '').toUpperCase() === 'V') || (degree.replace(/[#b]/g, '').toUpperCase() === 'VII' && quality.includes('diminished'));
+            const isPotentiallyDominant = (degree.replace(/[#b]/g, '').toUpperCase() === 'V');
             
             let isConfirmedDominant = false;
             if (isPotentiallyDominant) {
@@ -506,45 +552,49 @@
                 front = 'RÉSOLUTION';
             }
 
-            const actionRythmique = front.startsWith('TENSION') || front === 'OUT_OF_KEY' ? 'RAPIDE / AGRESSIF' : 'LENT / LYRIQUE';
+            const actionRythmique = front === 'TENSION' || front === 'OUT_OF_KEY' ? 'RAPIDE / AGRESSIF' : 'LENT / LYRIQUE';
             
             let noteFondatrice = [];
             if (front === 'TENSION') {
-                noteFondatrice.push({ note: getIntervalNote(noteInfo.root, 4, key), interval: '3M' });
-                noteFondatrice.push({ note: getIntervalNote(noteInfo.root, 10, key), interval: 'b7' });
+                noteFondatrice.push({ note: getIntervalNote(noteInfo.root, 4, key), interval: '3M', type:'fondatrice' });
+                noteFondatrice.push({ note: getIntervalNote(noteInfo.root, 10, key), interval: 'b7', type:'fondatrice' });
             } else {
                 noteFondatrice.push({
                     note: getIntervalNote(noteInfo.root, quality.includes('minor') ? 3 : 4, key),
-                    interval: quality.includes('minor') ? '3m' : '3M'
+                    interval: quality.includes('minor') ? '3m' : '3M',
+                    type: 'fondatrice'
                 });
             }
+
+            const expressivePalette = getExpressivePalette(front, noteInfo.root, key);
+            const allTargetOptions = [...noteFondatrice, ...expressivePalette];
 
             return { 
                 accord: chordName, 
                 degre: degree,
                 front,
                 actionRythmique,
-                noteFondatrice,
-                expressivePalette: getExpressivePalette(front, noteInfo.root, key)
+                allTargetOptions
             };
         }
 
         function getExpressivePalette(front, rootNote, key) {
+            let palette = [];
             if (front === 'RÉSOLUTION') {
-                return [
+                palette = [
                     { note: getIntervalNote(rootNote, 2, key), interval: '9e', intention: 'Lyrisme / Douceur', description: 'Émotion : Doux, apaisant. Action : Idéal pour les phrases longues et mélodiques.' },
                     { note: getIntervalNote(rootNote, 9, key), interval: '6M', intention: 'Funk / Optimisme', description: 'Couleur : Éclaircit le son mineur (Dorian). Action : Pour les plans rythmés et dansants.' },
                     { note: getIntervalNote(rootNote, 6, key), interval: '#11', intention: 'Rêveur / Flottant', description: 'Effet : Sensation aérienne et mystérieuse (Lydien). Action : À utiliser sur des plans qui montent ou glissent.' }
                 ];
             }
             if (front === 'TENSION' || front === 'OUT_OF_KEY') {
-                 return [
+                 palette = [
                     { note: getIntervalNote(rootNote, 1, key), interval: 'b9', intention: 'Tension Ultime', description: 'Émotion : Choc et urgence. Action : À réserver au Climax. Force la résolution.' },
                     { note: getIntervalNote(rootNote, 3, key), interval: '#9', intention: 'Action / Hard Rock', description: 'Couleur : Puissante et agressive (Blues/Rock). Action : Pour les plans rythmiques rapides et percussifs.' },
                     { note: getIntervalNote(rootNote, 2, key), interval: '9M', intention: 'Couleur Solide / Stable', description: 'HYPERSTRUCTURE SOLIDE. Moins agressif que le Tritone. Donne un son riche et clair.' }
                 ];
             }
-            return [];
+            return palette.map(p => ({...p, type: 'expressive'}));
         }
         
         function checkIfOutOfKey(chordName, key, degree) {
@@ -576,56 +626,34 @@
 
             let cardClass, badgeClass, badgeText;
             switch(analysis.front) {
-                case 'TENSION':
-                    cardClass = 'card-tension';
-                    badgeClass = 'badge-tension';
-                    badgeText = 'TENSION';
-                    break;
-                case 'OUT_OF_KEY':
-                    cardClass = 'card-out-of-key';
-                    badgeClass = 'badge-out-of-key';
-                    badgeText = 'HORS TONALITÉ';
-                    break;
-                default:
-                    cardClass = 'card-resolution';
-                    badgeClass = 'badge-resolution';
-                    badgeText = 'RÉSOLUTION';
+                case 'TENSION': cardClass = 'card-tension'; badgeClass = 'badge-tension'; badgeText = 'TENSION'; break;
+                case 'OUT_OF_KEY': cardClass = 'card-out-of-key'; badgeClass = 'badge-out-of-key'; badgeText = 'HORS TONALITÉ'; break;
+                default: cardClass = 'card-resolution'; badgeClass = 'badge-resolution'; badgeText = 'RÉSOLUTION';
             }
             
-            const fondatriceBadgesHTML = analysis.noteFondatrice.map(item => `
-                <div class="target-badge ${analysis.front === 'TENSION' ? 'target-badge-tritone' : ''}">
-                    <p class="text-xs uppercase">${(item.interval === '3m' || item.interval === '3M') && analysis.front === 'RÉSOLUTION' ? 'NOTE COULEUR' : 'NOTE TENSION'}</p>
-                    <p class="text-xl font-bold leading-none">${item.note} (${item.interval})</p>
+            const targetOptionsHTML = analysis.allTargetOptions.map((item, index) => `
+                <div>
+                    <input type="radio" name="target-choice-${analysis.analysisIndex}" id="target-${analysis.analysisIndex}-${index}" value="${index}" class="target-choice-input">
+                    <label for="target-${analysis.analysisIndex}-${index}" class="target-choice-label text-sm">
+                        <span class="font-bold">${item.note} (${item.interval})</span> - <span class="text-gray-400">${item.intention || (item.interval.includes('3') ? 'Note Couleur' : 'Note Stabilité')}</span>
+                    </label>
                 </div>
             `).join('');
 
-            const paletteOptionsHTML = analysis.expressivePalette.map((item, itemIndex) =>
-                `<option value="${itemIndex}">${item.intention} - ${item.description}</option>`
-            ).join('');
-
             cardWrapper.innerHTML = `
-                <div class="card ${cardClass} rounded-lg p-3 flex flex-col h-full space-y-3">
+                <div class="card ${cardClass} rounded-lg p-2 flex flex-col h-full space-y-2">
                     <div class="flex-shrink-0">
                         <div class="flex justify-between items-center mb-1">
-                            <h3 class="text-xl font-extrabold text-white">${analysis.accord} <span class="text-lg font-semibold text-gray-400">${analysis.degre}</span></h3>
+                            <h3 class="text-lg font-extrabold text-white">${analysis.accord} <span class="text-base font-semibold text-gray-400">${analysis.degre}</span></h3>
                             <span class="badge info-badge ${badgeClass}" data-front="${analysis.front}">${badgeText}</span>
                         </div>
-                         <p class="text-xs ${analysis.front === 'TENSION' || analysis.front === 'OUT_OF_KEY' ? 'text-rose-300' : 'text-blue-300'} font-semibold">${analysis.actionRythmique}</p>
+                         <p class="text-[11px] ${analysis.front === 'TENSION' || analysis.front === 'OUT_OF_KEY' ? 'text-rose-300' : 'text-blue-300'} font-semibold">${analysis.actionRythmique}</p>
                     </div>
 
-                    <div class="flex-grow space-y-3">
+                    <div class="flex-grow space-y-2">
                         <div>
-                            <p class="text-xs text-emerald-300/80 font-bold tracking-wider mb-1">NOTES CIBLES FONDATRICES</p>
-                            <div class="flex justify-around items-center gap-2">${fondatriceBadgesHTML}</div>
-                        </div>
-
-                        <div>
-                            <p class="text-xs text-violet-400 font-bold tracking-wider mb-1">PALETTE EXPRESSIVE</p>
-                             <select data-analysis-index="${analysis.index}" class="expressive-select w-full bg-gray-900 border border-gray-600 text-white text-sm rounded-lg focus:ring-violet-500 focus:border-violet-500 p-2">
-                                <option value="-1" selected disabled>Choisir une intention...</option>
-                                ${paletteOptionsHTML}
-                            </select>
-                            <div id="selected-palette-container-${analysis.index}" class="mt-2 h-16"></div>
+                            <p class="text-[11px] text-violet-400 font-bold tracking-wider mb-1">CHOISIR UNE NOTE CIBLE</p>
+                            <div class="space-y-1">${targetOptionsHTML}</div>
                         </div>
                     </div>
                 </div>
@@ -633,33 +661,20 @@
             return cardWrapper;
         }
         
-        function handlePaletteSelection(event) {
-            if (!event.target.matches('.expressive-select')) return;
+        function handleNoteSelection(event) {
+            if (!event.target.matches('.target-choice-input')) return;
 
-            const selectEl = event.target;
-            const analysisIndex = parseInt(selectEl.dataset.analysisIndex, 10);
-            const selectedItemIndex = parseInt(selectEl.value, 10);
+            const radio = event.target;
+            const analysisIndex = parseInt(radio.name.split('-')[2], 10);
+            const selectedItemIndex = parseInt(radio.value, 10);
             
             const analysis = analysisResultsForExport[analysisIndex];
-            
-            if (!analysis || selectedItemIndex < 0) return;
+            if (!analysis) return;
 
-            const selectedItem = analysis.expressivePalette[selectedItemIndex];
-            analysis.selectedPaletteItem = selectedItem;
+            analysis.selectedNote = analysis.allTargetOptions[selectedItemIndex];
 
-            const container = document.getElementById(`selected-palette-container-${analysisIndex}`);
-            
-            if (selectedItem && container) {
-                container.innerHTML = `
-                    <p class="text-xs text-violet-400 font-bold tracking-wider mb-1">CHOIX ACTIF</p>
-                    <div class="target-badge-expressive">
-                         <p class="text-xs uppercase">${selectedItem.intention}</p>
-                         <p class="text-xl font-bold leading-none">${selectedItem.note} (${selectedItem.interval})</p>
-                    </div>
-                `;
-            } else if (container) {
-                container.innerHTML = '';
-                delete analysis.selectedPaletteItem;
+            if (Tone.Transport.state !== 'started') {
+                 updateNeckDisplay({ active: [analysis.selectedNote], preview: [] });
             }
         }
         
@@ -691,15 +706,16 @@
             modalBody.textContent = body;
             modal.classList.remove('hidden');
             setTimeout(() => {
-                modalOverlay.classList.remove('opacity-0');
-                modalContent.classList.remove('opacity-0', 'scale-95');
-                modalContent.classList.add('opacity-100', 'scale-100');
+                modal.querySelector('#info-modal-overlay').classList.remove('opacity-0');
+                modal.querySelector('#info-modal-content').classList.remove('opacity-0', 'scale-95');
+                modal.querySelector('#info-modal-content').classList.add('opacity-100', 'scale-100');
             }, 10);
         }
 
         function hideModal() {
-            modalOverlay.classList.add('opacity-0');
-            modalContent.classList.add('opacity-0', 'scale-95');
+            const modal = document.getElementById('info-modal');
+            modal.querySelector('#info-modal-overlay').classList.add('opacity-0');
+            modal.querySelector('#info-modal-content').classList.add('opacity-0', 'scale-95');
             setTimeout(() => {
                 modal.classList.add('hidden');
             }, 300);
@@ -743,6 +759,15 @@
             if (rootIndex === -1) return [];
             return intervals.map(i => noteArray[(rootIndex + i) % 12]);
         }
+        
+        function getPentatonicScaleNotes(key) {
+            const noteArray = key.keySignatureType === 'flat' ? NOTES.flat : NOTES.sharp;
+            const intervals = key.type === 'major' ? MAJOR_PENTATONIC_INTERVALS : MINOR_PENTATONIC_INTERVALS;
+            const rootIndex = getNoteInfo(key.root).index;
+            if (rootIndex === -1) return [];
+            return intervals.map(i => noteArray[(rootIndex + i) % 12]);
+        }
+
 
         function getChordTones(chordName, key) {
             const noteInfo = getNoteInfo(chordName);
@@ -903,14 +928,14 @@
             const rows = analysisResultsForExport.map(res => {
                 if (!res.accord) return null;
                 
-                const fondatriceText = res.noteFondatrice.map(item => `${item.note} (${item.interval})`).join(' & ');
+                const fondatriceText = res.allTargetOptions.filter(i => i.type === 'fondatrice').map(item => `${item.note} (${item.interval})`).join(' & ');
 
                 const row = [
                     `"${res.accord}"`, `"${res.degre}"`, `"${res.front}"`, `"${res.actionRythmique}"`, `"${fondatriceText}"`
                 ];
 
-                if (res.selectedPaletteItem) {
-                    const item = res.selectedPaletteItem;
+                if (res.selectedNote && res.selectedNote.type === 'expressive') {
+                    const item = res.selectedNote;
                     row.push(`"${item.intention}"`, `"${item.note} (${item.interval})"`);
                 } else {
                     row.push('""', '""');
@@ -930,6 +955,216 @@
             link.click();
             document.body.removeChild(link);
         }
+        
+        // --- Guitar Neck Functions ---
+
+        function calculateNotePositions() {
+            NOTES.sharp.forEach(note => notePositions[note] = []);
+            NOTES.flat.forEach(note => notePositions[note] = []);
+
+            for (let stringIndex = 0; stringIndex < 6; stringIndex++) {
+                const openStringNote = TUNING[5 - stringIndex];
+                let currentNoteIndex = getNoteInfo(openStringNote).index;
+                for (let fret = 0; fret < 13; fret++) {
+                    const noteNameSharp = NOTES.sharp[currentNoteIndex % 12];
+                    const noteNameFlat = NOTES.flat[currentNoteIndex % 12];
+                    
+                    if (!notePositions[noteNameSharp]) notePositions[noteNameSharp] = [];
+                    notePositions[noteNameSharp].push([stringIndex, fret]);
+                    if (noteNameSharp !== noteNameFlat) {
+                         if (!notePositions[noteNameFlat]) notePositions[noteNameFlat] = [];
+                         notePositions[noteNameFlat].push([stringIndex, fret]);
+                    }
+                    currentNoteIndex++;
+                }
+            }
+        }
+        
+       function drawNeck(pentatonicNotes = []) {
+            neckSVG.innerHTML = '';
+            const SVG_NS = "http://www.w3.org/2000/svg";
+            const NUM_FRETS = 12;
+            const NECK_WIDTH = 800;
+            const NECK_HEIGHT = 140;
+
+            const defs = document.createElementNS(SVG_NS, 'defs');
+            const gradient = document.createElementNS(SVG_NS, 'linearGradient');
+            gradient.setAttribute('id', 'woodGrain');
+            gradient.setAttribute('x1', '0%'); gradient.setAttribute('y1', '0%');
+            gradient.setAttribute('x2', '0%'); gradient.setAttribute('y2', '100%');
+            gradient.innerHTML = `<stop offset="0%" style="stop-color:#6b4629;stop-opacity:1" /><stop offset="100%" style="stop-color:#4a2f19;stop-opacity:1" />`;
+            defs.appendChild(gradient);
+            neckSVG.appendChild(defs);
+            
+            const fretboard = document.createElementNS(SVG_NS, 'rect');
+            fretboard.setAttribute('x', 0); fretboard.setAttribute('y', 0);
+            fretboard.setAttribute('width', NECK_WIDTH + 50); fretboard.setAttribute('height', NECK_HEIGHT);
+            fretboard.setAttribute('fill', 'url(#woodGrain)');
+            neckSVG.appendChild(fretboard);
+            
+            const scaleNotesGroup = document.createElementNS(SVG_NS, 'g');
+            scaleNotesGroup.setAttribute('id', 'scale-notes-layer');
+            neckSVG.appendChild(scaleNotesGroup);
+
+            pentatonicNotes.forEach(note => {
+                const positions = notePositions[note] || [];
+                positions.forEach(([string, fret]) => {
+                    if (fret > NUM_FRETS) return;
+                    const circle = document.createElementNS(SVG_NS, 'circle');
+                    const y = (NECK_HEIGHT / 12) * (string * 2 + 1);
+                    const x = 50 + ((fret - 0.5) * (NECK_WIDTH / (NUM_FRETS + 1)));
+                    
+                    circle.setAttribute('cx', fret === 0 ? 25 : x);
+                    circle.setAttribute('cy', y);
+                    circle.setAttribute('r', 10);
+                    circle.setAttribute('fill', 'none');
+                    circle.setAttribute('stroke', '#6B7280');
+                    circle.setAttribute('stroke-width', '2');
+                    circle.setAttribute('opacity', '0.6');
+                    scaleNotesGroup.appendChild(circle);
+                });
+            });
+
+
+            for(let i = 0; i <= NUM_FRETS + 1; i++) {
+                const fret = document.createElementNS(SVG_NS, 'line');
+                const x = 50 + (i * (NECK_WIDTH / (NUM_FRETS+1)));
+                fret.setAttribute('x1', x); fret.setAttribute('y1', 0);
+                fret.setAttribute('x2', x); fret.setAttribute('y2', NECK_HEIGHT);
+                fret.setAttribute('stroke', i === 0 ? '#e5e7eb' : '#a0a0a0');
+                fret.setAttribute('stroke-width', i === 0 ? '6' : '3');
+                neckSVG.appendChild(fret);
+            }
+
+            for(let i=0; i<6; i++) {
+                const string = document.createElementNS(SVG_NS, 'line');
+                const y = (NECK_HEIGHT / 12) * (i * 2 + 1);
+                string.setAttribute('x1', 50); string.setAttribute('y1', y);
+                string.setAttribute('x2', NECK_WIDTH + 50); string.setAttribute('y2', y);
+                string.setAttribute('stroke', '#cbd5e1');
+                string.setAttribute('stroke-width', 1 + (i * 0.2));
+                neckSVG.appendChild(string);
+            }
+
+            const markers = { 3:1, 5:1, 7:1, 9:1, 12:2 };
+            for (const [fret, num] of Object.entries(markers)) {
+                 const x = 50 + ((fret-0.5) * (NECK_WIDTH / (NUM_FRETS+1)));
+                if (num === 1) {
+                    const marker = document.createElementNS(SVG_NS, 'circle');
+                    marker.setAttribute('cx', x); marker.setAttribute('cy', NECK_HEIGHT / 2);
+                    marker.setAttribute('r', 5); marker.setAttribute('fill', '#e5e7eb'); marker.setAttribute('opacity', '0.2');
+                    neckSVG.appendChild(marker);
+                } else {
+                    [NECK_HEIGHT / 4, (NECK_HEIGHT / 4) * 3].forEach(y => {
+                        const marker = document.createElementNS(SVG_NS, 'circle');
+                        marker.setAttribute('cx', x); marker.setAttribute('cy', y);
+                        marker.setAttribute('r', 5); marker.setAttribute('fill', '#e5e7eb'); marker.setAttribute('opacity', '0.2');
+                        neckSVG.appendChild(marker);
+                    });
+                }
+            }
+             const targetNotesGroup = document.createElementNS(SVG_NS, 'g');
+             targetNotesGroup.setAttribute('id', 'target-notes-layer');
+             neckSVG.appendChild(targetNotesGroup);
+        }
+        
+        function updateNeckForPlayback(gridIndex) {
+            // Find the analysis for the chord that is currently "active" by looking backwards from the current grid cell
+            let currentAnalysis = null;
+            for (let i = gridIndex; i >= 0; i--) {
+                const analysis = analysisResultsForExport.find(a => a.gridIndex === i);
+                if (analysis) {
+                    currentAnalysis = analysis;
+                    break;
+                }
+            }
+
+            // If there's no current chord (e.g., grid starts with empty cells), do nothing.
+            if (!currentAnalysis) {
+                updateNeckDisplay({ active: [], preview: [] });
+                return;
+            }
+            
+            // Find the *next* analysis in the sequence using the ordered analysisResultsForExport array
+            const currentAnalysisOrderIndex = currentAnalysis.analysisIndex;
+            let nextAnalysis = analysisResultsForExport[currentAnalysisOrderIndex + 1];
+
+            // If we're on the last chord, the next one is the first one (looping)
+            if (!nextAnalysis) {
+                nextAnalysis = analysisResultsForExport[0];
+            }
+
+            let activeNotes = [];
+            if (currentAnalysis && currentAnalysis.selectedNote) {
+                activeNotes.push({ ...currentAnalysis.selectedNote });
+            }
+
+            let previewNotes = [];
+            if (nextAnalysis && nextAnalysis.selectedNote) {
+                previewNotes.push({ ...nextAnalysis.selectedNote });
+            }
+            
+            updateNeckDisplay({ active: activeNotes, preview: previewNotes });
+        }
+
+
+        function updateNeckDisplay(notes) {
+            const targetNotesGroup = document.getElementById('target-notes-layer');
+            if (!targetNotesGroup) return;
+            targetNotesGroup.innerHTML = '';
+
+            const NUM_FRETS = 12;
+            const NECK_WIDTH = 800;
+            const NECK_HEIGHT = 140;
+            const SVG_NS = "http://www.w3.org/2000/svg";
+
+            const colors = {
+                fondatrice: '#10B981', 
+                expressive: '#8B5CF6',
+                preview: '#FBBF24' // Amber
+            };
+
+            // Preview note (upcoming, selected, solid, not animated)
+            notes.preview.forEach(noteItem => {
+                const positions = notePositions[noteItem.note] || [];
+                positions.forEach(([stringIndex, fret]) => {
+                    if (fret > NUM_FRETS) return;
+                    
+                    const dot = document.createElementNS(SVG_NS, 'circle');
+                    const y = (NECK_HEIGHT / 12) * (stringIndex * 2 + 1);
+                    const x = 50 + ((fret - 0.5) * (NECK_WIDTH / (NUM_FRETS + 1)));
+                    
+                    dot.setAttribute('cx', fret === 0 ? 25 : x);
+                    dot.setAttribute('cy', y);
+                    dot.setAttribute('r', 9);
+                    dot.setAttribute('fill', colors.preview);
+                    dot.setAttribute('class', 'note-dot');
+                    
+                    targetNotesGroup.appendChild(dot);
+                });
+            });
+            
+            // Active note (current, selected, solid, animated)
+            notes.active.forEach(noteItem => {
+                const positions = notePositions[noteItem.note] || [];
+                positions.forEach(([stringIndex, fret]) => {
+                    if (fret > NUM_FRETS) return;
+                    
+                    const dot = document.createElementNS(SVG_NS, 'circle');
+                    const y = (NECK_HEIGHT / 12) * (stringIndex * 2 + 1);
+                    const x = 50 + ((fret - 0.5) * (NECK_WIDTH / (NUM_FRETS + 1)));
+                    
+                    dot.setAttribute('cx', fret === 0 ? 25 : x);
+                    dot.setAttribute('cy', y);
+                    dot.setAttribute('fill', colors[noteItem.type] || '#FFFFFF');
+                    dot.setAttribute('stroke', '#111827');
+                    dot.setAttribute('class', 'note-dot note-dot-active');
+                    
+                    targetNotesGroup.appendChild(dot);
+                });
+            });
+        }
+
 
         // --- Auto-run on load ---
         window.onload = () => {
