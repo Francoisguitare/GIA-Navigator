@@ -21,6 +21,7 @@
             border-style: solid;
             transition: all 0.3s ease-in-out;
             min-height: 150px;
+            position: relative;
         }
         .card-resolution { border-color: #1D4ED8; } /* Blue */
         .card-tension { border-color: #BE123C; } /* Rose */
@@ -111,8 +112,11 @@
         #guitar-neck-wrapper {
             overflow-x: auto;
             padding-bottom: 10px;
-            display: flex;
-            justify-content: center;
+            width: 100%;
+        }
+        #guitar-neck-svg {
+            width: 100%;
+            height: 170px;
         }
         .note-dot {
             transition: all 0.2s;
@@ -125,6 +129,59 @@
         }
         .note-dot-active {
             animation: pulse-note 1s infinite;
+        }
+        .analysis-card-wrapper .card {
+            transition: all 0.2s ease-in-out;
+        }
+        .analysis-card-wrapper.card-selected .card {
+            box-shadow: 0 0 0 3px #a78bfa; /* violet-400 */
+            border-color: #a78bfa;
+            transform: scale(1.02);
+        }
+
+        .card-selector-dot {
+            position: absolute;
+            top: 8px;
+            left: 8px; /* Changé de 'right' à 'left' */
+            width: 16px;
+            height: 16px;
+            border-radius: 9999px;
+            border: 2px solid #6b7280; /* gray-500 */
+            background-color: transparent;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            z-index: 10; /* Pour s'assurer qu'il est cliquable */
+        }
+        .card-selector-dot:hover {
+            border-color: #a78bfa; /* violet-400 */
+        }
+        .card-selector-dot.selected {
+            /* La couleur de fond est maintenant gérée par JS pour correspondre à la note */
+            border-color: #a78bfa;
+        }
+
+
+        .note-dot-text {
+            font-size: 10px;
+            font-weight: bold;
+            fill: #111827; /* gray-900 */
+            pointer-events: none; /* Make text unclickable */
+            text-anchor: middle; /* Center horizontally */
+            dominant-baseline: central; /* Center vertically */
+        }
+
+        .note-name-text {
+            font-size: 8px;
+            font-weight: 500;
+            fill: #f3f4f6; /* gray-100 */
+            pointer-events: none;
+            text-anchor: middle;
+        }
+        .fret-number-text {
+            font-size: 10px;
+            font-weight: bold;
+            fill: #9ca3af; /* gray-400 */
+            text-anchor: middle;
         }
 
     </style>
@@ -155,7 +212,7 @@
                 </div>
                  <!-- Guitar Neck Section -->
                 <div id="guitar-neck-wrapper">
-                    <svg id="guitar-neck-svg" width="850" height="150"></svg>
+                    <svg id="guitar-neck-svg"></svg>
                 </div>
                 <!-- Player Controls -->
                 <div class="mt-3 flex flex-col sm:flex-row items-center justify-center gap-4 p-2 bg-gray-900/50 rounded-lg">
@@ -250,6 +307,7 @@
         let bassSynth, part, metronome, countdownPart;
         let currentLoopEndMeasures = 0;
         const TOTAL_CELLS = 24;
+        let lastPlayedGridIndex = -1;
         
         const TUNING = ['E', 'A', 'D', 'G', 'B', 'E'];
         let notePositions = {};
@@ -264,9 +322,13 @@
             clearGridBtn.addEventListener('click', clearGrid);
             randomGridBtn.addEventListener('click', generateRandomProgression);
             analysisOutput.addEventListener('change', handleNoteSelection);
-            analysisOutput.addEventListener('click', handleBadgeClick);
+            analysisOutput.addEventListener('click', (event) => {
+                handleBadgeClick(event);
+                handleCardClick(event);
+            });
             modalOverlay.addEventListener('click', hideModal);
             modalCloseBtn.addEventListener('click', hideModal);
+            window.addEventListener('resize', analyzeProgression);
         }
 
         function initializeGrid() {
@@ -323,6 +385,13 @@
 
         function startWithCountdown() {
             if (currentLoopEndMeasures === 0) return;
+
+            document.querySelectorAll('.card-selector-dot.selected').forEach(s => {
+                s.classList.remove('selected');
+                s.style.backgroundColor = 'transparent';
+                s.style.borderColor = '#6b7280';
+            });
+            lastPlayedGridIndex = -1;
 
             const firstChordAnalysis = analysisResultsForExport[0];
             if (firstChordAnalysis) {
@@ -393,7 +462,23 @@
              stopIcon.classList.add('hidden');
              playStopBtn.disabled = false;
              document.querySelectorAll('.input-grid-cell.cell-active').forEach(c => c.classList.remove('cell-active'));
-             updateNeckDisplay({ active: [], preview: [] });
+             
+             if (lastPlayedGridIndex !== -1) {
+                // If playback had started, show the last note
+                let lastAnalysis = null;
+                for (let i = lastPlayedGridIndex; i >= 0; i--) {
+                    const analysis = analysisResultsForExport.find(a => a.gridIndex === i);
+                    if (analysis) {
+                        lastAnalysis = analysis;
+                        break;
+                    }
+                }
+                if (lastAnalysis && lastAnalysis.selectedNote) {
+                    updateNeckDisplay({ active: [lastAnalysis.selectedNote], preview: [] });
+                }
+            }
+            // If lastPlayedGridIndex is -1 (stopped during countdown), do nothing to the neck display.
+            // This leaves the preparation note visible.
         }
         
         // --- Core Functions ---
@@ -434,15 +519,13 @@
                     analysis.gridIndex = chordItem.index;
                     analysis.analysisIndex = activeIndex;
                     
-                    // La note fondamentale (Root) est maintenant toujours la première option.
-                    const fundamentalNote = analysis.allTargetOptions[0];
+                    const fundamentalNote = analysis.allTargetOptions.find(opt => opt.interval === 'R');
                     if (fundamentalNote) {
                         analysis.selectedNote = fundamentalNote;
                     }
 
                     analysisResultsForExport.push(analysis);
                 });
-                // Create cards after all analysis is done
                 analysisResultsForExport.forEach(analysis => {
                     analysisOutput.appendChild(createAnalysisCard(analysis));
                 });
@@ -519,6 +602,7 @@
                     } else if (value.type === 'metro') {
                         metronome.triggerAttackRelease(value.note, '16n', time);
                     } else if (value.type === 'highlight') {
+                        lastPlayedGridIndex = value.gridIndex;
                         Tone.Draw.schedule(() => {
                             document.querySelectorAll('.input-grid-cell.cell-active').forEach(c => c.classList.remove('cell-active'));
                             if(inputCells[value.gridIndex]) {
@@ -566,10 +650,8 @@
             
             let structuralNotes = [];
 
-            // Ajoute la Fondamentale (Root)
             structuralNotes.push({ note: noteInfo.root, interval: 'R', type: 'fondatrice', intention: 'Stabilité' });
             
-            // Ajoute les tierces/septièmes
             if (front === 'TENSION') {
                 structuralNotes.push({ note: getIntervalNote(noteInfo.root, 4, key), interval: '3M', type:'fondatrice', intention: 'Couleur' });
                 structuralNotes.push({ note: getIntervalNote(noteInfo.root, 10, key), interval: 'b7', type:'fondatrice', intention: 'Tension' });
@@ -638,7 +720,8 @@
 
         function createAnalysisCard(analysis) {
             const cardWrapper = document.createElement('div');
-            cardWrapper.className = 'p-1 w-1/2 md:w-1/3 lg:w-1/4';
+            cardWrapper.className = 'analysis-card-wrapper p-1 w-1/2 md:w-1/3 lg:w-1/4';
+            cardWrapper.dataset.analysisIndex = analysis.analysisIndex;
 
             let cardClass, badgeClass, badgeText;
             switch(analysis.front) {
@@ -660,9 +743,10 @@
 
             cardWrapper.innerHTML = `
                 <div class="card ${cardClass} rounded-lg p-2 flex flex-col h-full space-y-2">
+                    <div class="card-selector-dot"></div>
                     <div class="flex-shrink-0">
-                        <div class="flex justify-between items-center mb-1">
-                            <h3 class="text-lg font-extrabold text-white">${analysis.accord} <span class="text-base font-semibold text-gray-400">${analysis.degre}</span></h3>
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="text-lg font-extrabold text-white pl-6">${analysis.accord} <span class="text-base font-semibold text-gray-400">${analysis.degre}</span></h3>
                             <span class="badge info-badge ${badgeClass}" data-front="${analysis.front}">${badgeText}</span>
                         </div>
                          <p class="text-[11px] ${analysis.front === 'TENSION' || analysis.front === 'OUT_OF_KEY' ? 'text-rose-300' : 'text-blue-300'} font-semibold">${analysis.actionRythmique}</p>
@@ -692,12 +776,25 @@
             analysis.selectedNote = analysis.allTargetOptions[selectedItemIndex];
 
             if (Tone.Transport.state !== 'started') {
-                 updateNeckDisplay({ active: [analysis.selectedNote], preview: [] });
+                const parentWrapper = radio.closest('.analysis-card-wrapper');
+                const selector = parentWrapper.querySelector('.card-selector-dot');
+                
+                if (selector && selector.classList.contains('selected')) {
+                    updateCardSelections(); 
+                } else { 
+                    document.querySelectorAll('.card-selector-dot.selected').forEach(s => {
+                        s.classList.remove('selected');
+                        s.style.backgroundColor = 'transparent';
+                        s.style.borderColor = '#6b7280';
+                    });
+                    updateNeckDisplay({ active: [analysis.selectedNote] });
+                }
             }
         }
         
         function handleBadgeClick(event) {
             if (!event.target.matches('.info-badge')) return;
+            event.stopPropagation();
             
             const badge = event.target;
             const front = badge.dataset.front;
@@ -718,6 +815,54 @@
             }
             showModal(title, body);
         }
+
+        function handleCardClick(event) {
+            if (Tone.Transport.state === 'started') return;
+            const selector = event.target.closest('.card-selector-dot');
+            if (!selector) return;
+
+            selector.classList.toggle('selected');
+            updateCardSelections();
+        }
+
+        function updateCardSelections() {
+            const allDots = document.querySelectorAll('.card-selector-dot');
+            const selectedDots = document.querySelectorAll('.card-selector-dot.selected');
+            const notesToDisplay = [];
+            const multiSelectColors = ['#FBBF24', '#34D399', '#F87171', '#60A5FA', '#EC4899', '#8B5CF6'];
+
+            allDots.forEach(dot => {
+                if (!dot.classList.contains('selected')) {
+                    dot.style.backgroundColor = 'transparent';
+                    dot.style.borderColor = '#6b7280';
+                }
+            });
+
+            if (selectedDots.length === 0) {
+                updateNeckDisplay({});
+                return;
+            }
+
+            selectedDots.forEach((dot, i) => {
+                const color = multiSelectColors[i % multiSelectColors.length];
+                dot.style.backgroundColor = color;
+                dot.style.borderColor = color;
+
+                const card = dot.closest('.analysis-card-wrapper');
+                const analysisIndex = parseInt(card.dataset.analysisIndex, 10);
+                const analysis = analysisResultsForExport[analysisIndex];
+                if (analysis && analysis.selectedNote) {
+                    notesToDisplay.push({
+                        noteItem: analysis.selectedNote,
+                        chordNumber: analysis.analysisIndex + 1,
+                        color: color
+                    });
+                }
+            });
+            
+            updateNeckDisplay({ multi: notesToDisplay });
+        }
+
 
         function showModal(title, body) {
             modalTitle.textContent = title;
@@ -983,7 +1128,7 @@
             for (let stringIndex = 0; stringIndex < 6; stringIndex++) {
                 const openStringNote = TUNING[5 - stringIndex];
                 let currentNoteIndex = getNoteInfo(openStringNote).index;
-                for (let fret = 0; fret < 13; fret++) {
+                for (let fret = 0; fret <= 17; fret++) {
                     const noteNameSharp = NOTES.sharp[currentNoteIndex % 12];
                     const noteNameFlat = NOTES.flat[currentNoteIndex % 12];
                     
@@ -1001,9 +1146,13 @@
        function drawNeck(pentatonicNotes = []) {
             neckSVG.innerHTML = '';
             const SVG_NS = "http://www.w3.org/2000/svg";
-            const NUM_FRETS = 12;
-            const NECK_WIDTH = 800;
+            const NUM_FRETS = 17;
             const NECK_HEIGHT = 140;
+            const NUT_WIDTH = 50;
+            
+            const availableWidth = neckSVG.clientWidth;
+            if (availableWidth === 0) return;
+            const NECK_WIDTH = availableWidth - NUT_WIDTH;
 
             const defs = document.createElementNS(SVG_NS, 'defs');
             const gradient = document.createElementNS(SVG_NS, 'linearGradient');
@@ -1016,7 +1165,7 @@
             
             const fretboard = document.createElementNS(SVG_NS, 'rect');
             fretboard.setAttribute('x', 0); fretboard.setAttribute('y', 0);
-            fretboard.setAttribute('width', NECK_WIDTH + 50); fretboard.setAttribute('height', NECK_HEIGHT);
+            fretboard.setAttribute('width', availableWidth); fretboard.setAttribute('height', NECK_HEIGHT);
             fretboard.setAttribute('fill', 'url(#woodGrain)');
             neckSVG.appendChild(fretboard);
             
@@ -1027,12 +1176,12 @@
             pentatonicNotes.forEach(note => {
                 const positions = notePositions[note] || [];
                 positions.forEach(([string, fret]) => {
-                    if (fret > NUM_FRETS) return;
+                    if (fret === 0 || fret > NUM_FRETS) return;
                     const circle = document.createElementNS(SVG_NS, 'circle');
                     const y = (NECK_HEIGHT / 12) * (string * 2 + 1);
-                    const x = 50 + ((fret - 0.5) * (NECK_WIDTH / (NUM_FRETS + 1)));
+                    const x = NUT_WIDTH + ((fret - 0.5) * (NECK_WIDTH / NUM_FRETS));
                     
-                    circle.setAttribute('cx', fret === 0 ? 25 : x);
+                    circle.setAttribute('cx', x);
                     circle.setAttribute('cy', y);
                     circle.setAttribute('r', 10);
                     circle.setAttribute('fill', 'none');
@@ -1043,12 +1192,14 @@
                 });
             });
 
+            const topStringY = (NECK_HEIGHT / 12);
+            const bottomStringY = (NECK_HEIGHT / 12) * 11;
 
-            for(let i = 0; i <= NUM_FRETS + 1; i++) {
+            for(let i = 0; i <= NUM_FRETS; i++) {
                 const fret = document.createElementNS(SVG_NS, 'line');
-                const x = 50 + (i * (NECK_WIDTH / (NUM_FRETS+1)));
-                fret.setAttribute('x1', x); fret.setAttribute('y1', 0);
-                fret.setAttribute('x2', x); fret.setAttribute('y2', NECK_HEIGHT);
+                const x = NUT_WIDTH + (i * (NECK_WIDTH / NUM_FRETS));
+                fret.setAttribute('x1', x); fret.setAttribute('y1', topStringY);
+                fret.setAttribute('x2', x); fret.setAttribute('y2', bottomStringY);
                 fret.setAttribute('stroke', i === 0 ? '#e5e7eb' : '#a0a0a0');
                 fret.setAttribute('stroke-width', i === 0 ? '6' : '3');
                 neckSVG.appendChild(fret);
@@ -1057,16 +1208,16 @@
             for(let i=0; i<6; i++) {
                 const string = document.createElementNS(SVG_NS, 'line');
                 const y = (NECK_HEIGHT / 12) * (i * 2 + 1);
-                string.setAttribute('x1', 50); string.setAttribute('y1', y);
-                string.setAttribute('x2', NECK_WIDTH + 50); string.setAttribute('y2', y);
+                string.setAttribute('x1', NUT_WIDTH); string.setAttribute('y1', y);
+                string.setAttribute('x2', availableWidth); string.setAttribute('y2', y);
                 string.setAttribute('stroke', '#cbd5e1');
                 string.setAttribute('stroke-width', 1 + (i * 0.2));
                 neckSVG.appendChild(string);
             }
 
-            const markers = { 3:1, 5:1, 7:1, 9:1, 12:2 };
+            const markers = { 3:1, 5:1, 7:1, 9:1, 12:2, 15:1, 17:1 };
             for (const [fret, num] of Object.entries(markers)) {
-                 const x = 50 + ((fret-0.5) * (NECK_WIDTH / (NUM_FRETS+1)));
+                 const x = NUT_WIDTH + ((fret-0.5) * (NECK_WIDTH / NUM_FRETS));
                 if (num === 1) {
                     const marker = document.createElementNS(SVG_NS, 'circle');
                     marker.setAttribute('cx', x); marker.setAttribute('cy', NECK_HEIGHT / 2);
@@ -1081,13 +1232,24 @@
                     });
                 }
             }
+
+            const fretsToLabel = [3, 5, 7, 9, 12, 15, 17];
+            fretsToLabel.forEach(fret => {
+                const text = document.createElementNS(SVG_NS, 'text');
+                const x = NUT_WIDTH + ((fret - 0.5) * (NECK_WIDTH / NUM_FRETS));
+                text.setAttribute('x', x);
+                text.setAttribute('y', NECK_HEIGHT + 15);
+                text.setAttribute('class', 'fret-number-text');
+                text.textContent = fret;
+                neckSVG.appendChild(text);
+            });
+            
              const targetNotesGroup = document.createElementNS(SVG_NS, 'g');
              targetNotesGroup.setAttribute('id', 'target-notes-layer');
              neckSVG.appendChild(targetNotesGroup);
         }
         
         function updateNeckForPlayback(gridIndex) {
-            // Find the analysis for the chord that is currently "active" by looking backwards from the current grid cell
             let currentAnalysis = null;
             for (let i = gridIndex; i >= 0; i--) {
                 const analysis = analysisResultsForExport.find(a => a.gridIndex === i);
@@ -1097,17 +1259,14 @@
                 }
             }
 
-            // If there's no current chord (e.g., grid starts with empty cells), do nothing.
             if (!currentAnalysis) {
-                updateNeckDisplay({ active: [], preview: [] });
+                updateNeckDisplay({});
                 return;
             }
             
-            // Find the *next* analysis in the sequence using the ordered analysisResultsForExport array
             const currentAnalysisOrderIndex = currentAnalysis.analysisIndex;
             let nextAnalysis = analysisResultsForExport[currentAnalysisOrderIndex + 1];
 
-            // If we're on the last chord, the next one is the first one (looping)
             if (!nextAnalysis) {
                 nextAnalysis = analysisResultsForExport[0];
             }
@@ -1126,61 +1285,109 @@
         }
 
 
-        function updateNeckDisplay(notes) {
+        function updateNeckDisplay(notes = {}) {
             const targetNotesGroup = document.getElementById('target-notes-layer');
             if (!targetNotesGroup) return;
             targetNotesGroup.innerHTML = '';
 
-            const NUM_FRETS = 12;
-            const NECK_WIDTH = 800;
+            const NUM_FRETS = 17;
             const NECK_HEIGHT = 140;
             const SVG_NS = "http://www.w3.org/2000/svg";
+            const NUT_WIDTH = 50;
+            const availableWidth = neckSVG.clientWidth;
+            if (availableWidth === 0) return;
+            const NECK_WIDTH = availableWidth - NUT_WIDTH;
 
             const colors = {
                 fondatrice: '#10B981', 
                 expressive: '#8B5CF6',
-                preview: '#FBBF24' // Amber
+                preview: '#FBBF24'
             };
 
-            // Preview note (upcoming, selected, solid, not animated)
-            notes.preview.forEach(noteItem => {
-                const positions = notePositions[noteItem.note] || [];
-                positions.forEach(([stringIndex, fret]) => {
-                    if (fret > NUM_FRETS) return;
+            const isPlaybackActive = !!(notes.active || notes.preview);
+
+            if (notes.multi && notes.multi.length > 0) {
+                notes.multi.forEach(noteData => {
+                    const { noteItem, chordNumber, color } = noteData;
+                    const positions = notePositions[noteItem.note] || [];
                     
-                    const dot = document.createElementNS(SVG_NS, 'circle');
-                    const y = (NECK_HEIGHT / 12) * (stringIndex * 2 + 1);
-                    const x = 50 + ((fret - 0.5) * (NECK_WIDTH / (NUM_FRETS + 1)));
-                    
-                    dot.setAttribute('cx', fret === 0 ? 25 : x);
-                    dot.setAttribute('cy', y);
-                    dot.setAttribute('r', 9);
-                    dot.setAttribute('fill', colors.preview);
-                    dot.setAttribute('class', 'note-dot');
-                    
-                    targetNotesGroup.appendChild(dot);
+                    positions.forEach(([stringIndex, fret]) => {
+                        if (fret === 0 || fret > NUM_FRETS) return;
+
+                        const group = document.createElementNS(SVG_NS, 'g');
+                        const y = (NECK_HEIGHT / 12) * (stringIndex * 2 + 1);
+                        const x = NUT_WIDTH + ((fret - 0.5) * (NECK_WIDTH / NUM_FRETS));
+
+                        const dot = document.createElementNS(SVG_NS, 'circle');
+                        dot.setAttribute('cx', x);
+                        dot.setAttribute('cy', y);
+                        dot.setAttribute('r', 9);
+                        dot.setAttribute('fill', color);
+                        dot.setAttribute('class', 'note-dot');
+                        group.appendChild(dot);
+
+                        const numberText = document.createElementNS(SVG_NS, 'text');
+                        numberText.setAttribute('x', x);
+                        numberText.setAttribute('y', y);
+                        numberText.setAttribute('class', 'note-dot-text');
+                        numberText.textContent = chordNumber;
+                        group.appendChild(numberText);
+
+                        const nameText = document.createElementNS(SVG_NS, 'text');
+                        nameText.setAttribute('x', x);
+                        nameText.setAttribute('y', y + 15);
+                        nameText.setAttribute('class', 'note-name-text');
+                        nameText.textContent = noteItem.note;
+                        group.appendChild(nameText);
+                        
+                        targetNotesGroup.appendChild(group);
+                    });
                 });
-            });
-            
-            // Active note (current, selected, solid, animated)
-            notes.active.forEach(noteItem => {
-                const positions = notePositions[noteItem.note] || [];
-                positions.forEach(([stringIndex, fret]) => {
-                    if (fret > NUM_FRETS) return;
-                    
-                    const dot = document.createElementNS(SVG_NS, 'circle');
-                    const y = (NECK_HEIGHT / 12) * (stringIndex * 2 + 1);
-                    const x = 50 + ((fret - 0.5) * (NECK_WIDTH / (NUM_FRETS + 1)));
-                    
-                    dot.setAttribute('cx', fret === 0 ? 25 : x);
-                    dot.setAttribute('cy', y);
-                    dot.setAttribute('fill', colors[noteItem.type] || '#FFFFFF');
-                    dot.setAttribute('stroke', '#111827');
-                    dot.setAttribute('class', 'note-dot note-dot-active');
-                    
-                    targetNotesGroup.appendChild(dot);
+            } 
+            else {
+                (notes.preview || []).forEach(noteItem => {
+                    const positions = notePositions[noteItem.note] || [];
+                    positions.forEach(([stringIndex, fret]) => {
+                        if (fret === 0 || fret > NUM_FRETS) return;
+                        
+                        const dot = document.createElementNS(SVG_NS, 'circle');
+                        const y = (NECK_HEIGHT / 12) * (stringIndex * 2 + 1);
+                        const x = NUT_WIDTH + ((fret - 0.5) * (NECK_WIDTH / NUM_FRETS));
+                        
+                        dot.setAttribute('cx', x);
+                        dot.setAttribute('cy', y);
+                        dot.setAttribute('r', 9);
+                        dot.setAttribute('fill', colors.preview);
+                        dot.setAttribute('class', 'note-dot');
+                        
+                        targetNotesGroup.appendChild(dot);
+                    });
                 });
-            });
+                
+                (notes.active || []).forEach(noteItem => {
+                    const positions = notePositions[noteItem.note] || [];
+                    positions.forEach(([stringIndex, fret]) => {
+                        if (fret === 0 || fret > NUM_FRETS) return;
+                        
+                        const dot = document.createElementNS(SVG_NS, 'circle');
+                        const y = (NECK_HEIGHT / 12) * (stringIndex * 2 + 1);
+                        const x = NUT_WIDTH + ((fret - 0.5) * (NECK_WIDTH / NUM_FRETS));
+                        
+                        dot.setAttribute('cx', x);
+                        dot.setAttribute('cy', y);
+                        dot.setAttribute('fill', colors[noteItem.type] || '#FFFFFF');
+                        dot.setAttribute('stroke', '#111827');
+
+                        if (isPlaybackActive && Tone.Transport.state === 'started') {
+                           dot.setAttribute('class', 'note-dot note-dot-active');
+                        } else {
+                           dot.setAttribute('class', 'note-dot');
+                        }
+                        
+                        targetNotesGroup.appendChild(dot);
+                    });
+                });
+            }
         }
 
 
