@@ -190,7 +190,17 @@
 
     <div class="min-h-screen flex flex-col items-center">
         
-        <div class="w-full max-w-7xl mx-auto">
+        <div class="w-full max-w-7xl mx-auto relative">
+             <div class="absolute top-2 right-2 z-20">
+                <button id="fullscreen-btn" title="Plein écran" class="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition">
+                    <svg id="fullscreen-enter-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m0 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m0 0v-4m0 4l-5-5" />
+                    </svg>
+                    <svg id="fullscreen-exit-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 4h5v5M9 4H4v5M15 20h5v-5M9 20H4v-5" />
+                    </svg>
+                </button>
+            </div>
 
             <!-- Header -->
             <header class="text-center mb-2">
@@ -293,6 +303,9 @@
         const clearGridBtn = document.getElementById('clear-grid-btn');
         const randomGridBtn = document.getElementById('random-grid-btn');
         const neckSVG = document.getElementById('guitar-neck-svg');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const fullscreenEnterIcon = document.getElementById('fullscreen-enter-icon');
+        const fullscreenExitIcon = document.getElementById('fullscreen-exit-icon');
 
         // --- Music Theory Data ---
         const NOTES = {
@@ -329,6 +342,11 @@
             modalOverlay.addEventListener('click', hideModal);
             modalCloseBtn.addEventListener('click', hideModal);
             window.addEventListener('resize', analyzeProgression);
+            fullscreenBtn.addEventListener('click', toggleFullScreen);
+            document.addEventListener('fullscreenchange', updateFullscreenIcon);
+            document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
+            document.addEventListener('mozfullscreenchange', updateFullscreenIcon);
+            document.addEventListener('MSFullscreenChange', updateFullscreenIcon);
         }
 
         function initializeGrid() {
@@ -463,7 +481,7 @@
              playStopBtn.disabled = false;
              document.querySelectorAll('.input-grid-cell.cell-active').forEach(c => c.classList.remove('cell-active'));
              
-             if (lastPlayedGridIndex !== -1) {
+             if (lastPlayedGridIndex > -1) {
                 // If playback had started, show the last note
                 let lastAnalysis = null;
                 for (let i = lastPlayedGridIndex; i >= 0; i--) {
@@ -476,9 +494,12 @@
                 if (lastAnalysis && lastAnalysis.selectedNote) {
                     updateNeckDisplay({ active: [lastAnalysis.selectedNote], preview: [] });
                 }
+            } else {
+                 const firstChordAnalysis = analysisResultsForExport[0];
+                 if(firstChordAnalysis && firstChordAnalysis.selectedNote) {
+                    updateNeckDisplay({ active: [firstChordAnalysis.selectedNote], preview: [] });
+                 }
             }
-            // If lastPlayedGridIndex is -1 (stopped during countdown), do nothing to the neck display.
-            // This leaves the preparation note visible.
         }
         
         // --- Core Functions ---
@@ -1387,6 +1408,46 @@
                         targetNotesGroup.appendChild(dot);
                     });
                 });
+            }
+        }
+        
+        // --- UI Helper Functions ---
+        function toggleFullScreen() {
+            try {
+                if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                    const docEl = document.documentElement;
+                    if (docEl.requestFullscreen) {
+                        docEl.requestFullscreen().catch(err => console.warn("Le mode plein écran est bloqué par la politique de permissions."));
+                    } else if (docEl.mozRequestFullScreen) { /* Firefox */
+                        docEl.mozRequestFullScreen();
+                    } else if (docEl.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                        docEl.webkitRequestFullscreen();
+                    } else if (docEl.msRequestFullscreen) { /* IE/Edge */
+                        docEl.msRequestFullscreen();
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen().catch(err => console.warn("Erreur à la sortie du plein écran."));
+                    } else if (document.mozCancelFullScreen) { /* Firefox */
+                        document.mozCancelFullScreen();
+                    } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) { /* IE/Edge */
+                        document.msExitFullscreen();
+                    }
+                }
+            } catch(e) {
+                console.warn("L'API Plein écran a échoué. Cela est probablement dû aux restrictions de l'environnement.");
+            }
+        }
+
+        function updateFullscreenIcon() {
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement) {
+                fullscreenEnterIcon.classList.add('hidden');
+                fullscreenExitIcon.classList.remove('hidden');
+            } else {
+                fullscreenEnterIcon.classList.remove('hidden');
+                fullscreenExitIcon.classList.add('hidden');
             }
         }
 
