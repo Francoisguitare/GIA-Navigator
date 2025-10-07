@@ -225,16 +225,41 @@
                     <svg id="guitar-neck-svg"></svg>
                 </div>
                 <!-- Player Controls -->
-                <div class="mt-3 flex flex-col sm:flex-row items-center justify-center gap-4 p-2 bg-gray-900/50 rounded-lg">
-                    <button id="play-stop-btn" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300 flex items-center justify-center gap-2">
-                        <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <svg id="stop-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        <span id="play-btn-text" class="w-16 text-left">Play</span>
-                    </button>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <label for="tempo-slider" class="font-semibold text-gray-300">Tempo:</label>
-                        <input type="range" id="tempo-slider" min="45" max="180" value="45" class="w-full">
-                        <span id="tempo-value" class="font-bold text-white w-12 text-center">45 bpm</span>
+                <div class="mt-3 flex flex-col gap-4 p-3 bg-gray-900/50 rounded-lg">
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <button id="play-stop-btn" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300 flex items-center justify-center gap-2">
+                            <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <svg id="stop-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <span id="play-btn-text" class="w-16 text-left">Play</span>
+                        </button>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <label for="tempo-slider" class="font-semibold text-gray-300">Tempo:</label>
+                            <input type="range" id="tempo-slider" min="45" max="180" value="45" class="w-full">
+                            <span id="tempo-value" class="font-bold text-white w-12 text-center">45 bpm</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-x-6 gap-y-2 items-center pt-2 border-t border-gray-700/50">
+                        <!-- Metronome Volume -->
+                        <div class="flex items-center gap-2 w-full">
+                            <svg title="Métronome" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            </svg>
+                            <input type="range" id="metro-volume-slider" min="-48" max="0" value="-12" class="w-full">
+                        </div>
+                        <!-- Bass Volume -->
+                        <div class="flex items-center gap-2 w-full">
+                            <svg title="Basse" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                               <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" />
+                            </svg>
+                             <input type="range" id="bass-volume-slider" min="-48" max="0" value="-6" class="w-full">
+                        </div>
+                        <!-- Chord Volume -->
+                        <div class="flex items-center gap-2 w-full">
+                           <svg title="Nappes" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m3 6V7m-9 4h9" />
+                            </svg>
+                            <input type="range" id="chord-volume-slider" min="-48" max="0" value="-14" class="w-full">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -306,6 +331,9 @@
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const fullscreenEnterIcon = document.getElementById('fullscreen-enter-icon');
         const fullscreenExitIcon = document.getElementById('fullscreen-exit-icon');
+        const metroVolumeSlider = document.getElementById('metro-volume-slider');
+        const bassVolumeSlider = document.getElementById('bass-volume-slider');
+        const chordVolumeSlider = document.getElementById('chord-volume-slider');
 
         // --- Music Theory Data ---
         const NOTES = {
@@ -317,7 +345,7 @@
         const MAJOR_PENTATONIC_INTERVALS = [0, 2, 4, 7, 9];
         
         let analysisResultsForExport = [];
-        let bassSynth, part, metronome, countdownPart;
+        let bassSynth, chordSynth, part, metronome, countdownPart;
         let currentLoopEndMeasures = 0;
         const TOTAL_CELLS = 24;
         let lastPlayedGridIndex = -1;
@@ -369,7 +397,22 @@
                 envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.5 },
                 filterEnvelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.8, baseFrequency: 200, octaves: 4 }
             }).toDestination();
-            bassSynth.volume.value = -6;
+            bassSynth.volume.value = bassVolumeSlider.value;
+
+            chordSynth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: {
+                    type: "fatsawtooth",
+                    count: 3,
+                    spread: 30
+                },
+                envelope: {
+                    attack: 0.05,
+                    decay: 0.1,
+                    sustain: 0.7,
+                    release: 0.8
+                }
+            }).toDestination();
+            chordSynth.volume.value = chordVolumeSlider.value;
 
             metronome = new Tone.MembraneSynth({
                 pitchDecay: 0.01,
@@ -377,7 +420,7 @@
                 oscillator: { type: 'square' },
                 envelope: { attack: 0.001, decay: 0.1, sustain: 0.01, release: 0.1 }
             }).toDestination();
-            metronome.volume.value = -12;
+            metronome.volume.value = metroVolumeSlider.value;
 
             playStopBtn.addEventListener('click', async () => {
                 if (Tone.context.state !== 'running') {
@@ -399,6 +442,10 @@
             });
             Tone.Transport.bpm.value = tempoSlider.value;
             tempoValue.textContent = `${tempoSlider.value} bpm`;
+
+            metroVolumeSlider.addEventListener('input', e => metronome.volume.value = e.target.value);
+            bassVolumeSlider.addEventListener('input', e => bassSynth.volume.value = e.target.value);
+            chordVolumeSlider.addEventListener('input', e => chordSynth.volume.value = e.target.value);
         }
 
         function startWithCountdown() {
@@ -466,6 +513,7 @@
              }
              
              bassSynth.triggerRelease();
+             chordSynth.releaseAll();
 
              Tone.Transport.stop();
              Tone.Transport.cancel(0);
@@ -561,6 +609,13 @@
 
             const inputs = Array.from(document.querySelectorAll('#input-grid input'));
             const chords = inputs.map(input => input.value.trim());
+            const firstChord = chords.find(c => c);
+            if (!firstChord) {
+                currentLoopEndMeasures = 0;
+                return;
+            }
+            const key = detectKey(firstChord);
+
             const lastChordIndex = findLastIndex(chords, c => c);
             
             if (lastChordIndex === -1) {
@@ -596,6 +651,11 @@
                         if (durationBeats > 0) {
                             const durationNotation = `${Math.floor(durationBeats / 4)}:${durationBeats % 4}:0`;
                             events.push({ time, note: rootNote + '2', duration: durationNotation, type: 'bass' });
+                            
+                            const chordTones = getChordTones(chordName, key).map(n => n + '4'); // Octave augmentée
+                            if (chordTones.length > 0) {
+                                events.push({ time, notes: chordTones, duration: durationNotation, type: 'chord' });
+                            }
                         }
                     }
                 }
@@ -620,6 +680,8 @@
                 part = new Tone.Part((time, value) => {
                     if (value.type === 'bass') {
                         bassSynth.triggerAttackRelease(value.note, value.duration, time);
+                    } else if (value.type === 'chord') {
+                        chordSynth.triggerAttackRelease(value.notes, value.duration, time);
                     } else if (value.type === 'metro') {
                         metronome.triggerAttackRelease(value.note, '16n', time);
                     } else if (value.type === 'highlight') {
@@ -1417,7 +1479,7 @@
                 if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
                     const docEl = document.documentElement;
                     if (docEl.requestFullscreen) {
-                        docEl.requestFullscreen().catch(err => console.warn("Le mode plein écran est bloqué par la politique de permissions."));
+                        docEl.requestFullscreen().catch(err => console.warn(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`));
                     } else if (docEl.mozRequestFullScreen) { /* Firefox */
                         docEl.mozRequestFullScreen();
                     } else if (docEl.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
@@ -1427,7 +1489,7 @@
                     }
                 } else {
                     if (document.exitFullscreen) {
-                        document.exitFullscreen().catch(err => console.warn("Erreur à la sortie du plein écran."));
+                        document.exitFullscreen();
                     } else if (document.mozCancelFullScreen) { /* Firefox */
                         document.mozCancelFullScreen();
                     } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
@@ -1437,7 +1499,7 @@
                     }
                 }
             } catch(e) {
-                console.warn("L'API Plein écran a échoué. Cela est probablement dû aux restrictions de l'environnement.");
+                console.warn("Fullscreen API failed. This is likely due to environment restrictions.");
             }
         }
 
